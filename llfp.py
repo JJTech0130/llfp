@@ -23,7 +23,7 @@ class leap:
         packet = packet.encode('utf-8')
         self.wrappedSocket.send(packet)
         print(self.wrappedSocket.recv())
-    def goToLevel(self, zone, level, fadeTime=b"00:00:05", delayTime=b"00:00:00"):
+    def goToLevel(self, zone, level, fadeTime="00:00:05", delayTime="00:00:00"):
         """This tells a zone to go to a specific level."""
         packet = leapjson.goToLevelPacket % (zone, level, fadeTime, delayTime)
         packet = packet.encode('utf-8')
@@ -31,20 +31,5 @@ class leap:
         print(self.wrappedSocket.recv())
     def ping(self):
         """This is the ping command. Acts like it sounds."""
-        self.wrappedSocket.send(leapjson.pingPacket)
-        print(self.wrappedSocket.recv())
-    def readDevice(self,device=b""):
-        """
-        This is suppossed to read a list of devices, or,
-        if you specify a device ID it should return info about
-        that device. It has NOT been implimented on the Lutron side yet.
-        """
-        self.wrappedSocket.send(leapjson.readDevicePacket % device)
-        print(self.wrappedSocket.recv())
-    def getZones(self):
-        """
-        This is supposed to get a list of zones, however it has NOT been implemented
-        on the Lutron side yet.
-        """
-        self.wrappedSocket.send(leapjson.getZonesPacket)
+        self.wrappedSocket.send(leapjson.pingPacket.encode('utf-8'))
         print(self.wrappedSocket.recv())
