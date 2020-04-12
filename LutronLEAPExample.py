@@ -2,7 +2,7 @@ import socket
 import ssl
 
 # Define variables
-HOST, PORT = '192.168.0.5', 8085
+HOST, PORT = '192.168.0.5', 8085 #Replace with the IP of the device
 loginPacket = """{"CommuniqueType": "UpdateRequest","Header": {"Url": "/login"},"Body": {"Login": {"ContextType": "Application","LoginId": "%s","Password": "%s"}}}\r\n"""
 goToLevelPacket = """{"CommuniqueType":"CreateRequest","Header":{"Url":"/zone/%d/commandprocessor"},"Body":{"Command":{"CommandType":"GoToDimmedLevel","DimmedLevelParameters":{"Level":%d,"FadeTime":"%s","DelayTime":"%s"}}}}\r\n"""
 
