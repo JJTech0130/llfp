@@ -22,7 +22,7 @@ class leap:
         self.wrappedSocket.send(leapjson.loginPacket % (loginId, password))
         print(self.wrappedSocket.recv())
     def goToLevel(self, zone, level, fadeTime="00:00:05", delayTime="00:00:00"):
-        """This tells a zone to go to a specific level"""
+        """This tells a zone to go to a specific level."""
         self.wrappedSocket.send(leapjson.goToLevelPacket % (zone, level, fadeTime, delayTime))
         print(self.wrappedSocket.recv())
     def ping(self):
