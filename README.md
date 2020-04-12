@@ -1,4 +1,4 @@
-# LutronLEAPControl
+# LLFM - Lutron LEAP For Python
 This is a python library for using Lutron's LEAP control protocol.
 ## TODO
 
