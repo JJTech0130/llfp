@@ -7,11 +7,11 @@ class leap:
     def __init__(self, host, port=8085):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.settimeout(10)
-        wrappedSocket = ssl.wrap_socket(sock)
-        wrappedSocket.connect((host, port))
+        self.wrappedSocket = ssl.wrap_socket(sock)
+        self.wrappedSocket.connect((host, port))
     def login(self, loginId, password):
-        wrappedSocket.send(leapjson.loginPacket % (loginId, password))
-        print(wrappedSocket.recv())
+        self.wrappedSocket.send(leapjson.loginPacket % (loginId, password))
+        #print(self.wrappedSocket.recv())
     def goToLevel(self, zone, level, fadeTime="00:00:05", delayTime="00:00:00"):
-        wrappedSocket.send(goToLevelPacket % (zone, level, fadeTime, delayTime))
-        print(wrappedSocket.recv())
+        self.wrappedSocket.send(leapjson.goToLevelPacket % (zone, level, fadeTime, delayTime))
+        print(self.wrappedSocket.recv())
