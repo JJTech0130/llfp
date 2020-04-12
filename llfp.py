@@ -6,8 +6,8 @@ class leap:
     """
     Main LEAP class.
     Example:
-    import leap
-    myleap = leap.leap("192.168,0,5") #Replace "192.168.0.5" with devices IP
+    import llfp
+    myleap = llfp.leap("192.168,0,5") #Replace "192.168.0.5" with devices IP
     myleap.login("loginId","password")
     myleap.goToLevel(2,100) #2 is the zone id and 100 is the level to go to
     """
