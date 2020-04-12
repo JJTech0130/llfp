@@ -11,7 +11,10 @@ class leap:
         self.wrappedSocket.connect((host, port))
     def login(self, loginId, password):
         self.wrappedSocket.send(leapjson.loginPacket % (loginId, password))
-        #print(self.wrappedSocket.recv())
+        print(self.wrappedSocket.recv())
     def goToLevel(self, zone, level, fadeTime="00:00:05", delayTime="00:00:00"):
         self.wrappedSocket.send(leapjson.goToLevelPacket % (zone, level, fadeTime, delayTime))
+        print(self.wrappedSocket.recv())
+    def ping(self):
+        self.wrappedSocket.send(leapjson.pingPacket)
         print(self.wrappedSocket.recv())
