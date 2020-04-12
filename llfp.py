@@ -1,6 +1,4 @@
-import leapjson
-import socket
-import ssl
+import leapjson, socket, ssl, json
 
 class leap:
     """
@@ -22,7 +20,12 @@ class leap:
         packet = leapjson.loginPacket % (loginId, password)
         packet = packet.encode('utf-8')
         self.wrappedSocket.send(packet)
-        print(self.wrappedSocket.recv())
+        returnmsg = self.wrappedSocket.recv()
+        returnmsg = returnmsg.decode('utf-8')
+        print(returnmsg)
+        data = json.loads(returnmsg)
+        print(data["Header"]["StatusCode"])
+
     def goToLevel(self, zone, level, fadeTime="00:00:05", delayTime="00:00:00"):
         """This tells a zone to go to a specific level."""
         packet = leapjson.goToLevelPacket % (zone, level, fadeTime, delayTime)
