@@ -1,6 +1,4 @@
-import leapjson
-import socket
-import ssl
+import leapjson, socket, ssl, json
 
 class leap:
     """
@@ -17,19 +15,31 @@ class leap:
         sock.settimeout(10)
         self.wrappedSocket = ssl.wrap_socket(sock)
         self.wrappedSocket.connect((host, port))
+
+    def __parseStatusCode(self,jsontoparse):
+        jsontoparse = jsontoparse.decode('utf-8')
+        jsontoparse = json.loads(jsontoparse)
+        StatusCode = jsontoparse["Header"]["StatusCode"]
+        if StatusCode == "200 OK":
+            return
+        else:
+            return StatusCode
+
     def login(self, loginId, password):
         """This sends the login packet to the device."""
         packet = leapjson.loginPacket % (loginId, password)
         packet = packet.encode('utf-8')
         self.wrappedSocket.send(packet)
-        print(self.wrappedSocket.recv())
+        return self.__parseStatusCode(self.wrappedSocket.recv())
+
     def goToLevel(self, zone, level, fadeTime="00:00:05", delayTime="00:00:00"):
         """This tells a zone to go to a specific level."""
         packet = leapjson.goToLevelPacket % (zone, level, fadeTime, delayTime)
         packet = packet.encode('utf-8')
         self.wrappedSocket.send(packet)
-        print(self.wrappedSocket.recv())
+        return self.__parseStatusCode(self.wrappedSocket.recv())
+
     def ping(self):
         """This is the ping command. Acts like it sounds."""
         self.wrappedSocket.send(leapjson.pingPacket.encode('utf-8'))
-        print(self.wrappedSocket.recv())
+        return self.__parseStatusCode(self.wrappedSocket.recv())
