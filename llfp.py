@@ -19,17 +19,21 @@ class leap:
         self.wrappedSocket.connect((host, port))
     def login(self, loginId, password):
         """This sends the login packet to the device."""
-        self.wrappedSocket.send(leapjson.loginPacket % (loginId, password))
+        packet = leapjson.loginPacket % (loginId, password)
+        packet = packet.encode('utf-8')
+        self.wrappedSocket.send(packet)
         print(self.wrappedSocket.recv())
-    def goToLevel(self, zone, level, fadeTime="00:00:05", delayTime="00:00:00"):
+    def goToLevel(self, zone, level, fadeTime=b"00:00:05", delayTime=b"00:00:00"):
         """This tells a zone to go to a specific level."""
-        self.wrappedSocket.send(leapjson.goToLevelPacket % (zone, level, fadeTime, delayTime))
+        packet = leapjson.goToLevelPacket % (zone, level, fadeTime, delayTime)
+        packet = packet.encode('utf-8')
+        self.wrappedSocket.send(packet)
         print(self.wrappedSocket.recv())
     def ping(self):
         """This is the ping command. Acts like it sounds."""
         self.wrappedSocket.send(leapjson.pingPacket)
         print(self.wrappedSocket.recv())
-    def readDevice(self,device=""):
+    def readDevice(self,device=b""):
         """
         This is suppossed to read a list of devices, or,
         if you specify a device ID it should return info about
