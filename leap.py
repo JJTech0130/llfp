@@ -18,3 +18,6 @@ class leap:
     def ping(self):
         self.wrappedSocket.send(leapjson.pingPacket)
         print(self.wrappedSocket.recv())
+    def readDevice(self):
+        self.wrappedSocket.send(leapjson.readDevicePacket)
+        print(self.wrappedSocket.recv())
