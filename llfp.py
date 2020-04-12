@@ -33,7 +33,14 @@ class leap:
         """
         This is suppossed to read a list of devices, or,
         if you specify a device ID it should return info about
-        that device. It has not been implimented on the Lutron side yet.
+        that device. It has NOT been implimented on the Lutron side yet.
         """
         self.wrappedSocket.send(leapjson.readDevicePacket % device)
+        print(self.wrappedSocket.recv())
+    def getZones(self):
+        """
+        This is supposed to get a list of zones, however it has NOT been implemented
+        on the Lutron side yet.
+        """
+        self.wrappedSocket.send(leapjson.getZonesPacket)
         print(self.wrappedSocket.recv())
