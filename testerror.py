@@ -1,6 +1,6 @@
 import llfp, time
 test = llfp.leap("192.168.0.5")
-print(test.login("jjtech","jjtech0130"))
+print(test.login("jjtddddddech","jjtech0130"))
 #i = 0
 #while i <= 100:
 #    test.goToLevel(690,i,"00:00:01")
