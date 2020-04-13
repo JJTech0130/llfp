@@ -25,7 +25,7 @@ def parseStatusCode(jsontoparse):
     jsontoparse = jsontoparse.decode('utf-8')
     jsontoparse = json.loads(jsontoparse)
     StatusCode = jsontoparse["Header"]["StatusCode"]
-    if StatusCode == "200 OK" && DEBUG == False:
+    if StatusCode == "200 OK" and DEBUG == False:
         return
     else:
         return StatusCode
@@ -54,6 +54,6 @@ class zone():
         self.wrappedSocket.send(packet)
         return parseStatusCode(self.wrappedSocket.recv())
 
-if __name__ == __main__:
+if __name__ == '__main__':
     print("This is a library, and is NOT meant to run standalone.")
     print("(But you can try some examples to see how it works!)")
