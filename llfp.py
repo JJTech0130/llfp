@@ -1,6 +1,4 @@
-import leapjson
-import socket
-import ssl
+import leapjson, socket, ssl, json
 
 class leap:
     """
@@ -17,34 +15,31 @@ class leap:
         sock.settimeout(10)
         self.wrappedSocket = ssl.wrap_socket(sock)
         self.wrappedSocket.connect((host, port))
+
+    def __parseStatusCode(self,jsontoparse):
+        jsontoparse = jsontoparse.decode('utf-8')
+        jsontoparse = json.loads(jsontoparse)
+        StatusCode = jsontoparse["Header"]["StatusCode"]
+        if StatusCode == "200 OK":
+            return
+        else:
+            return StatusCode
+
     def login(self, loginId, password):
         """This sends the login packet to the device."""
         packet = leapjson.loginPacket % (loginId, password)
         packet = packet.encode('utf-8')
         self.wrappedSocket.send(packet)
-        print(self.wrappedSocket.recv())
-    def goToLevel(self, zone, level, fadeTime=b"00:00:05", delayTime=b"00:00:00"):
+        return self.__parseStatusCode(self.wrappedSocket.recv())
+
+    def goToLevel(self, zone, level, fadeTime="00:00:05", delayTime="00:00:00"):
         """This tells a zone to go to a specific level."""
         packet = leapjson.goToLevelPacket % (zone, level, fadeTime, delayTime)
         packet = packet.encode('utf-8')
         self.wrappedSocket.send(packet)
-        print(self.wrappedSocket.recv())
+        return self.__parseStatusCode(self.wrappedSocket.recv())
+
     def ping(self):
         """This is the ping command. Acts like it sounds."""
-        self.wrappedSocket.send(leapjson.pingPacket)
-        print(self.wrappedSocket.recv())
-    def readDevice(self,device=b""):
-        """
-        This is suppossed to read a list of devices, or,
-        if you specify a device ID it should return info about
-        that device. It has NOT been implimented on the Lutron side yet.
-        """
-        self.wrappedSocket.send(leapjson.readDevicePacket % device)
-        print(self.wrappedSocket.recv())
-    def getZones(self):
-        """
-        This is supposed to get a list of zones, however it has NOT been implemented
-        on the Lutron side yet.
-        """
-        self.wrappedSocket.send(leapjson.getZonesPacket)
-        print(self.wrappedSocket.recv())
+        self.wrappedSocket.send(leapjson.pingPacket.encode('utf-8'))
+        return self.__parseStatusCode(self.wrappedSocket.recv())
