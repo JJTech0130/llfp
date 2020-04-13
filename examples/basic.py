@@ -1,3 +1,5 @@
+# NOTE: You will need to put llfp.py and leapjson.py in the
+#  same folder as basic.py in order for this to work!!!
 import llfp
 # Setup connection and login
 bridge1 = llfp.bridge("192.168.0.5")
