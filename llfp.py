@@ -57,3 +57,7 @@ class zone():
         packet = packet.encode('utf-8')
         self.wrappedSocket.send(packet)
         return parseStatusCode(self.wrappedSocket.recv())
+
+if __name__ == __main__:
+    print("This is a library, and is NOT meant to run standalone.")
+    print("(But you can try some examples to see how it works!)")
