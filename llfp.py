@@ -18,7 +18,6 @@ if sys.version_info[0] > 2:
 else:
     PY3K = False
 
-#Don't change this, declare it with bridge obj.
 DEBUG = False
 
 def parseStatusCode(jsontoparse):
@@ -31,13 +30,11 @@ def parseStatusCode(jsontoparse):
     else:
         return StatusCode
 class bridge:
-    def __init__(self, host, port=8085, debug=False):
-        global DEBUG
+    def __init__(self, host, port=8085):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.settimeout(10)
         self.wrappedSocket = ssl.wrap_socket(sock)
         self.wrappedSocket.connect((host,port))
-        DEBUG = debug
     def ping(self):
         self.wrappedSocket.send(leapjson.pingPacket.encode('utf-8'))
         return parseStatusCode(self.wrappedSocket.recv())
@@ -48,7 +45,6 @@ class bridge:
         return parseStatusCode(self.wrappedSocket.recv())
 class zone():
     def __init__(self, zoneId, bridgeobj):
-        global DEBUG
         self.zoneId = zoneId
         self.wrappedSocket = bridgeobj.wrappedSocket
 
