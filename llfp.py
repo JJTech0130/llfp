@@ -21,6 +21,9 @@ else:
 DEBUG = False
 
 def parseStatusCode(jsontoparse):
+    '''
+    Parse the JSON status codes retured
+    '''
     if DEBUG == True: print(jsontoparse)
     jsontoparse = jsontoparse.decode('utf-8')
     jsontoparse = json.loads(jsontoparse)
@@ -30,6 +33,9 @@ def parseStatusCode(jsontoparse):
     else:
         return StatusCode
 class bridge:
+    '''
+    Control the bridge/processor
+    '''
     def __init__(self, host, port=8085):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.settimeout(10)
@@ -44,6 +50,9 @@ class bridge:
         self.wrappedSocket.send(packet)
         return parseStatusCode(self.wrappedSocket.recv())
 class zone():
+    '''
+    Control zones
+    '''
     def __init__(self, zoneId, bridgeobj):
         self.zoneId = zoneId
         self.wrappedSocket = bridgeobj.wrappedSocket
