@@ -52,6 +52,13 @@ class bridge:
     def readDevices(self):
         self.wrappedSocket.send(leapjson.readDevicesPacket.encode('utf-8'))
         return parseStatusCode(self.wrappedSocket.recv())
+        #return self.wrappedSocket.recv()
+    def readDevice(self,device):
+        packet = leapjson.readDevicePacket % (device)
+        packet = packet.encode('utf-8')
+        self.wrappedSocket.send(packet)
+        return parseStatusCode(self.wrappedSocket.recv())
+        #return self.wrappedSocket.recv()
 class zone():
     '''
     Control zones
