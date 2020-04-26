@@ -62,6 +62,20 @@ class zone():
         packet = packet.encode('utf-8')
         self.wrappedSocket.send(packet)
         return parseStatusCode(self.wrappedSocket.recv())
+    def goToColor(self, level, hue, fadeTime="00:00:05", delayTime="00:00:00"):
+        packet = leapjson.goToColorPacket % (self.zoneId, level, 50, hue, 100, delayTime, fadeTime)
+        packet = packet.encode('utf-8')
+        self.wrappedSocket.send(packet)
+        #print(packet)
+        return parseStatusCode(self.wrappedSocket.recv())
+        #return self.wrappedSocket.recv()
+    def goToColorFull(self, level, vibrancy, hue, saturation, fadeTime="00:00:05", delayTime="00:00:00"):
+        packet = leapjson.goToColorPacket % (self.zoneId, level, vibrancy, hue, saturation, delayTime, fadeTime)
+        packet = packet.encode('utf-8')
+        self.wrappedSocket.send(packet)
+        #print(packet)
+        return parseStatusCode(self.wrappedSocket.recv())
+        #return self.wrappedSocket.recv()
 
 if __name__ == '__main__':
     print("This is a library, and is NOT meant to run standalone.")
