@@ -38,5 +38,5 @@ print(zone1.goToLevel(0)) #Replace 0 with a number 0-100
 - [x] Get basic things (login, set level, ping, etc.)
 - [x] Use seperate classes
 - [ ] Make sure that things work correctly when they finally get implemented
-- [ ] Add more features (color, etc.)
+- [x] Add more features (color, etc.)
 - [ ] Document all the features
