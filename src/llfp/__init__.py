@@ -49,6 +49,13 @@ class bridge:
         packet = packet.encode('utf-8')
         self.wrappedSocket.send(packet)
         return parseStatusCode(self.wrappedSocket.recv())
+    def readDevice(self,device):
+        packet = leapjson.readDevicePacket % (device)
+        packet = packet.encode('utf-8')
+        self.wrappedSocket.send(packet)
+        return (self.wrappedSocket.recv()).decode('utf-8')
+        #return parseStatusCode(self.wrappedSocket.recv())
+        #return self.wrappedSocket.recv()
 class zone():
     '''
     Control zones
@@ -56,7 +63,11 @@ class zone():
     def __init__(self, zoneId, bridgeobj):
         self.zoneId = zoneId
         self.wrappedSocket = bridgeobj.wrappedSocket
-
+    def status(self):
+        packet = leapjson.zoneStatusPacket % (self.zoneId)
+        packet = packet.encode('utf-8')
+        self.wrappedSocket.send(packet)
+        return (self.wrappedSocket.recv()).decode('utf-8')
     def goToLevel(self, level, fadeTime="00:00:05", delayTime="00:00:00"):
         packet = leapjson.goToLevelPacket % (self.zoneId, level, fadeTime, delayTime)
         packet = packet.encode('utf-8')
@@ -76,6 +87,12 @@ class zone():
         #print(packet)
         return parseStatusCode(self.wrappedSocket.recv())
         #return self.wrappedSocket.recv()
+    def goToWhiteLevel(self, level, vibrancy, kelvin, fadeTime="00:00:05", delayTime="00:00:00"):
+        packet = leapjson.goToWhiteLevelPacket % (self.zoneId, level, vibrancy, kelvin, delayTime, fadeTime)
+        #print(packet)
+        packet = packet.encode('utf-8')
+        self.wrappedSocket.send(packet)
+        return parseStatusCode(self.wrappedSocket.recv())
 
 if __name__ == '__main__':
     print("This is a library, and is NOT meant to run standalone.")
