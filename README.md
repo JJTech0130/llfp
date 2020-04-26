@@ -3,7 +3,14 @@
 This is a python library for using Lutron's LEAP control protocol.
 
 ## Examples
+### Installing
+First, get the .whl file from [here](https://github.com/JJTech0130/llfp/releases)
 
+Then, run the command
+`pip3 install llfp-*.*.*-py3-none-any.whl`
+(Replace the '\*'s with the version of llfp you downloaded)
+
+> **Note:** Currently, this is only available for python3. In the future, python 2 support *may* be added.
 ### Basic usage
 
 First, you need to setup a connection with the ```bridge``` object.
@@ -37,6 +44,6 @@ print(zone1.goToLevel(0)) #Replace 0 with a number 0-100
 
 - [x] Get basic things (login, set level, ping, etc.)
 - [x] Use seperate classes
-- [ ] Make sure that things work correctly when they finally get implemented
+- [x] Make sure that things work correctly when they finally get implemented
 - [x] Add more features (color, etc.)
 - [ ] Document all the features
