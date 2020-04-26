@@ -1,4 +1,4 @@
-# LLFP - Lutron LEAP For Python
+# llfp - Lutron LEAP For Python
 
 This is a python library for using Lutron's LEAP control protocol.
 
