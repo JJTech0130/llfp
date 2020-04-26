@@ -5,5 +5,4 @@ loginPacket = """{"CommuniqueType": "UpdateRequest","Header": {"Url": "/login"},
 goToLevelPacket = """{"CommuniqueType":"CreateRequest","Header":{"Url":"/zone/%d/commandprocessor"},"Body":{"Command":{"CommandType":"GoToDimmedLevel","DimmedLevelParameters":{"Level":%d,"FadeTime":"%s","DelayTime":"%s"}}}}\r\n"""
 pingPacket = """{"CommuniqueType":"ReadRequest","Header":{"Url":"/server/status/ping"}}\r\n"""
 goToColorPacket = """{"CommuniqueType":"CreateRequest","Header":{"Url":"/zone/%d/commandprocessor"},"Body":{"Command":{"CommandType":"GoToSpectrumTuningLevel","SpectrumTuningLevelParameters":{"Level":%d,"Vibrancy":%d,"ColorTuningStatus":{"HSVTuningLevel":{"Hue":%d,"Saturation":%d}},"DelayTime":"%s","FadeTime":"%s"}}}}\r\n"""
-readDevicesPacket = """{"CommuniqueType":"ReadRequest","Header":{"Url":"/device"}}\r\n"""
 readDevicePacket = """{"CommuniqueType":"ReadRequest","Header":{"Url":"/device/%d"}}\r\n"""
