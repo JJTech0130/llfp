@@ -9,7 +9,7 @@ https://github.com/JJTech0130/LLFP
 '''
 
 import json
-import leapjson
+from LLFP import leapjson
 import socket
 import ssl
 import sys
