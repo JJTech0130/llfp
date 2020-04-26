@@ -6,3 +6,5 @@ goToLevelPacket = """{"CommuniqueType":"CreateRequest","Header":{"Url":"/zone/%d
 pingPacket = """{"CommuniqueType":"ReadRequest","Header":{"Url":"/server/status/ping"}}\r\n"""
 goToColorPacket = """{"CommuniqueType":"CreateRequest","Header":{"Url":"/zone/%d/commandprocessor"},"Body":{"Command":{"CommandType":"GoToSpectrumTuningLevel","SpectrumTuningLevelParameters":{"Level":%d,"Vibrancy":%d,"ColorTuningStatus":{"HSVTuningLevel":{"Hue":%d,"Saturation":%d}},"DelayTime":"%s","FadeTime":"%s"}}}}\r\n"""
 readDevicePacket = """{"CommuniqueType":"ReadRequest","Header":{"Url":"/device/%d"}}\r\n"""
+zoneStatusPacket = """{"CommuniqueType":"ReadRequest","Header":{"Url":"/zone/%d/status"}}\r\n"""
+goToWhiteLevelPacket = """{"CommuniqueType":"CreateRequest","Header":{"Url":"/zone/%d/commandprocessor"},"Body":{"Command":{"CommandType":"GoToSpectrumTuningLevel","SpectrumTuningLevelParameters":{"Level":%d,"Vibrancy":%d,"ColorTuningStatus":{"WhiteTuningLevel":{"Kelvin":%d}},"DelayTime":"%s","FadeTime":"%s"}}}}\r\n"""
