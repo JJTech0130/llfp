@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="llfp",
-    version="0.0.3",
+    version="0.0.4",
     author="JJTech0130",
     author_email="jjtech0130@outlook.com",
     description="Lutron LEAP for Python",
@@ -22,5 +22,3 @@ setuptools.setup(
     package_dir={'': 'src'},
     packages=setuptools.find_packages(where='src'),
 )
-
-
