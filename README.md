@@ -25,7 +25,7 @@ zone1 = llfp.zone(690, bridge1) #Replace 690 with the number of the zone you wan
 
 > **Note**: As of right now, the current LEAP implementation does NOT support reading back zone numbers, so you will have to find this out elsewhere.
 
-Then, you can do something. (Well... you can set the brightness, and that's about it)
+Then, you can do something.
 
 ```python
 print(zone1.goToLevel(0)) #Replace 0 with a number 0-100
