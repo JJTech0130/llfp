@@ -2,6 +2,8 @@
 
 This is a python library for using Lutron's LEAP control protocol.
 
+See the [wiki](https://github.com/LLFP/llfp/wiki) for more details.
+
 ## TODO
 
 - [x] Get basic things (login, set level, ping, etc.)
