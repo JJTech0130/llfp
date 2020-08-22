@@ -11,7 +11,7 @@ setuptools.setup(
     description="Lutron LEAP for Python",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/JJTech0130/LLFP",
+    url="https://github.com/LLFP/llfp",
     classifiers=[
         "Development Status :: 3 - Alpha"
         "Programming Language :: Python :: 3",
