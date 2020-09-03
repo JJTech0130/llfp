@@ -10,4 +10,6 @@ See the [wiki](https://github.com/LLFP/llfp/wiki) for more details.
 - [x] Use seperate classes
 - [x] Make sure that things work correctly when they finally get implemented
 - [x] Add more features (color, etc.)
+- [ ] Add support for reading zone IDs
 - [ ] Document all the features
+- [ ] Add Github Actions CI
