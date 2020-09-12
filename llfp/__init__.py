@@ -190,8 +190,8 @@ class zone():
         self.__href = summary['href'] # Prefer absolute href as returned by getsummary over any realative one we were given (for eg. /area/3 over /area/rootarea)
         self.__name = summary['Name'] # Human readable name
         self.__type = summary['ControlType'] # Type of zone
-        self.__tune = {} # Empty dictionary for color properties
-        self.refresh()
+        self.__tune = self.__gettune()
+
     # Private functions
     def __getsummary(self):
         packet = {
@@ -213,9 +213,24 @@ class zone():
 
         return self.__leap.send(packet)
 
-    def __push(self):
-        if self.__type == 'SpectrumTune':
-            packet = {
+    def __gettune(self):
+        status = self.__getstatus()['Body']['ZoneStatus']
+        
+        # Refresh tune using .get to avoid KeyErrors
+        tune = {
+            'Level': status.get('Level'),
+            'Vibrancy': status.get('Vibrancy'),
+            'ColorTuningStatus': {
+                'HSVTuningLevel': status.get('ColorTuningStatus')['HSVTuningLevel'] if status.get('ColorTuningStatus') != None else None
+            }
+            #'hue': status.get('ColorTuningStatus')['HSVTuningLevel']['Hue'],
+            #'saturation': status.get('ColorTuningStatus')['HSVTuningLevel']['Saturation']
+        }
+
+        return tune
+
+    def __settune(self):
+        packet = {
                 "CommuniqueType": "CreateRequest",
                 "Header": {
                     "Url": self.__href + "/commandprocessor",
@@ -224,109 +239,38 @@ class zone():
                     "Command": {
                         "CommandType": "GoToSpectrumTuningLevel",
                         "SpectrumTuningLevelParameters": {
-                            "Level": value,
-                            "Vibrancy": self.__temp['vibrancy'],
-                            "ColorTuningStatus": {
-                                "HSVTuningLevel": {
-                                    "Hue": self.__temp['hue'],
-                                    "Saturation": self.__temp['saturation']
-                                }
-                            },
                             "FadeTime":"00:00:00",
                             "DelayTime":"00:00:00"
                         }
                     }
                 }
             }
-        elif self.__type == 'Dimmed':
-            pass
-        else:
-            warnings.warn('Unsupported zone type!')
-    # Public API
-    def refresh(self):
-        status = self.__getstatus()['Body']['ZoneStatus']
-        self.__tune['level'] = status['Level']
-        if self.__type == 'SpectrumTune':
-            self.__tune['vibrancy'] = status['Vibrancy']
-            self.__tune['hue'] = status['ColorTuningStatus']['HSVTuningLevel']['Hue']
-            self.__tune['saturation'] = status['ColorTuningStatus']['HSVTuningLevel']['Saturation']
-        else:
-            self.__tune['vibrancy'] = None
-            self.__tune['hue'] = None
-            self.__tune['saturation'] = None
+        
+        for p in self.__tune:
+            packet['Body']['Command']['SpectrumTuningLevelParameters'][p] = self.__tune[p]
 
-        self.__temp = self.__tune.copy()
+        #print(packet)
 
+        return self.__leap.send(packet)
 
     @property
     def level(self):
-        self.refresh()
-        return self.__level
+        self.__tune = self.__gettune()
+        return self.__tune['Level']
 
     @level.setter
     def level(self, value):
-        if self.__type == 'SpectrumTune' and value != 0:
-            packet = {
-                "CommuniqueType": "CreateRequest",
-                "Header": {
-                    "Url": self.__href + "/commandprocessor",
-                },
-                "Body": {
-                    "Command": {
-                        "CommandType": "GoToSpectrumTuningLevel",
-                        "SpectrumTuningLevelParameters": {
-                            "Level": value,
-                            "Vibrancy": self.__vibrancy,
-                            "ColorTuningStatus": {
-                                "HSVTuningLevel": {
-                                    "Hue": self.__hue,
-                                    "Saturation": self.__saturation
-                                }
-                            },
-                            "FadeTime":"00:00:00",
-                            "DelayTime":"00:00:00"
-                        }
-                    }
-                }
-            }
-        # If value is 0, don't set the color values
-        elif self.__type == 'SpectrumTune':
-            packet = {
-                "CommuniqueType": "CreateRequest",
-                "Header": {
-                    "Url": self.__href + "/commandprocessor",
-                },
-                "Body": {
-                    "Command": {
-                        "CommandType": "GoToSpectrumTuningLevel",
-                        "SpectrumTuningLevelParameters": {
-                            "Level": value,
-                            "FadeTime":"00:00:00",
-                            "DelayTime":"00:00:00"
-                        }
-                    }
-                }
-            }
-        else:
-            packet = {
-                "CommuniqueType": "CreateRequest",
-                "Header": {
-                    "Url": self.__href + "/commandprocessor",
-                },
-                "Body": {
-                    "Command": {
-                        "CommandType": "GoToDimmedLevel",
-                        "DimmedLevelParameters": {
-                            "Level": value,
-                            "FadeTime":"00:00:00",
-                            "DelayTime":"00:00:00"
-                        }
-                    }
-                }
-            }
+        self.__tune = self.__gettune()
+        self.__tune['Level'] = value
 
-        print(self.__leap.send(packet))
-        self.refresh()
+        # If level is 0, delete all other keys before sending
+        if value == 0:
+            for p in self.__tune.copy():
+                if p != 'Level':
+                    del self.__tune[p]
+        
+        self.__settune()
+        self.__tune = self.__gettune() # Reset it
 
     @property
     def delay(self):
