@@ -12,7 +12,6 @@ import socket, ssl
 import colorsys
 import warnings
 
-DEBUG = False
 
 class leap:
     '''
@@ -31,44 +30,28 @@ class leap:
         self._sock.send(packet) # Send the packet
         return json.loads(self._sock.recv().decode('utf-8')) # Decode the result
 
-    def read(self, url):
+    # TODO: Run periodically to keep the connection allive
+    def ping(self):
         packet = {
             "CommuniqueType": "ReadRequest",
             "Header": {
-                "Url": str(url)
+                "Url": "/server/status/ping"
             }
         }
 
         return self.send(packet)
-
-    def run(self, url, command):
-        packet = {
-            "CommuniqueType": "CreateRequest",
-            "Header": {
-                "Url": str(url)
-            },
-            "Body": {
-                "Command": command
-            }
-        }
-
-        return self.send(packet)
-
-    # TODO: Run periodically to keep the connection allive
-    def ping(self):
-        return self.read("/server/status/ping")
 
     # Compat.
     @property
     def sock(self):
-        return self.__sock
+        return self._sock
 
 class bridge:
     '''
     Control the bridge/processor
     '''
     def __init__(self, host, port=8081):
-        self.__leap = leap(host,port)
+        self._leap = leap(host,port)
 
 
     def login(self, id, password):
@@ -86,115 +69,26 @@ class bridge:
             }
         }
 
-        return self.__leap.send(packet)
+        return self._leap.send(packet)
 
     @property
     def leap(self):
-        return self.__leap
+        return self._leap
 
     @property
     def root(self):
         return area(self, "/area/rootarea")
 
 class area():
-    '''
-    Area object
-    '''
-    def __init__(self, parent, href):
-        self.__href = href
-        self.__parent = parent
-        self.__leap = self.__parent.leap
-        summary = self.__getsummary()['Body']['Area']
-        self.__href = summary['href'] # Prefer absolute href as returned by getsummary over any realative one we were given (for eg. /area/3 over /area/rootarea)
-        self.__name = summary['Name'] # Human readable name
-        self.__children = self.__getchildren() # Save children as private variable so we don't end up with repeat objects
 
-    # Private functions
-    def __getsummary(self):
-        packet = {
-            "CommuniqueType": "ReadRequest",
-            "Header": {
-                "Url": str(self.__href)
-            }
-        }
-
-        return self.__leap.send(packet)
-
-    def __getchildareas(self):
-        packet = {
-            "CommuniqueType": "ReadRequest",
-            "Header": {
-                "Url": str(self.__href) + "/childarea/summary"
-            }
-        }
-
-        return self.__leap.send(packet)
-
-
-    def __getchildren(self):
-        children = []
-        # Try to get child areas
-        try:
-            childlist = self.__getchildareas()['Body']['AreaSummaries']
-            for child in childlist:
-                childobj = area(self, child['href'])
-                children.append(childobj)
-        except KeyError:
-            # We are a leaf, so see if we have any zones
-            self.__leaf = True # Probably a better way, but this is how we tell for now.
-            try:
-                associatedzones = self.__getsummary()['Body']['Area']['AssociatedZones']
-                for associatedzone in associatedzones:
-                    zoneobj = zone(self, associatedzone['href'])
-                    children.append(zoneobj)
-            except KeyError:
-                # We don't seem to have any children...
-                pass
-
-        return children
-
-    # Properties
-    @property
-    def children(self):
-        return self.__children.copy() # Lists are not automatically passed as copies
-
-    @property
-    def name(self):
-        return self.__name
-
-    @property
-    def href(self):
-        return self.__href
-
-    @property
-    def leaf(self):
-        return self.__leaf
-
-    @property
-    def parent(self):
-        return self.__parent
-
-    @property
-    def leap(self):
-        return self.__leap
-
-class leafArea(area):
-    pass
-
-
-
-class zone():
-    '''
-    Zone Base Class
-    '''
     def __init__(self, parent, href):
         self._href = href
         self._parent = parent
         self._leap = self._parent.leap
-        summary = self._getsummary()['Body']['Zone']
+        summary = self._getsummary()['Body']['Area']
         self._href = summary['href'] # Prefer absolute href as returned by getsummary over any realative one we were given (for eg. /area/3 over /area/rootarea)
         self._name = summary['Name'] # Human readable name
-        self._type = summary['ControlType'] # Type of zone
+        self._children = self._getchildren() # Save children as private variable so we don't end up with repeat objects
 
     # Private functions
     def _getsummary(self):
@@ -206,6 +100,105 @@ class zone():
         }
 
         return self._leap.send(packet)
+
+    def _getchildren(self):
+        children = []
+        packet = {
+            "CommuniqueType": "ReadRequest",
+            "Header": {
+                "Url": str(self._href) + "/childarea/summary"
+            }
+        }
+        childareas = self._leap.send(packet)
+
+        try:
+            childlist = childareas['Body']['AreaSummaries']
+            for child in childlist:
+                if child['IsLeaf'] == 'true':
+                    childobj = leafArea(self, child['href'])
+                    children.append(childobj)
+                else:
+                    childobj = area(self, child['href'])
+                    children.append(childobj)
+        except KeyError:
+            # This is not supposed to happen...
+            warnings.warn("Branch area has no children...")
+
+        return children
+
+    # Properties
+    @property
+    def children(self):
+        return self._getchildren().copy() # Lists are not automatically passed as copies
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def href(self):
+        return self._href
+
+    @property
+    def parent(self):
+        return self._parent
+
+    @property
+    def leap(self):
+        return self._leap
+
+class leafArea(area):
+
+     def _getchildren(self):
+        children = []
+        # We are a leaf, so see if we have any zones
+        try:
+            associatedzones = self._getsummary()['Body']['Area']['AssociatedZones']
+            for associatedzone in associatedzones:
+                zoneobj = zone.create(self, associatedzone['href'])
+                children.append(zoneobj)
+        except KeyError:
+            # We don't seem to have any children...
+            pass
+
+        return children
+
+class zone():
+
+    @classmethod
+    def create(cls, parent, href):
+        ztype = cls.getsummary(parent.leap, href)['Body']['Zone']['ControlType']
+        if ztype == 'Switched':
+            z = switchedZone(parent, href)
+        elif ztype == 'Dimmed':
+            z = dimmedZone(parent, href)
+        elif ztype == 'SpectrumTune':
+            z = spectrumTuningZone(parent, href)
+        else:
+            warnings.warn("Unsupported Zone Type: " + ztype)
+            z = zone(parent, href) # Just create a generic zone
+        
+        return z
+        
+    def __init__(self, parent, href):
+        self._href = href
+        self._parent = parent
+        self._leap = self._parent.leap
+        summary = self.getsummary(self._leap, self._href)['Body']['Zone']
+        self._href = summary['href'] # Prefer absolute href as returned by getsummary over any realative one we were given (for eg. /area/3 over /area/rootarea)
+        self._name = summary['Name'] # Human readable name
+        self._type = summary['ControlType'] # Type of zone
+
+    @staticmethod
+    def getsummary(leap, href):
+        packet = {
+            "CommuniqueType": "ReadRequest",
+            "Header": {
+                "Url": str(href)
+            }
+        }
+
+        return leap.send(packet)
 
     def _getstatus(self):
         packet = {
@@ -241,10 +234,6 @@ class zone():
 # Zone Subclasses
 
 class switchedZone(zone):
-    def __init__(self, parent, href):
-        super().__init__(parent, href)
-        if self._type != 'Switched':
-            warnings.warn("Zone Type Mismatch")
 
     # Private Functions
     def _getstate(self):
@@ -290,12 +279,48 @@ class switchedZone(zone):
         self._setstate(state)
 
 
-
-
-    
-
 class dimmedZone(zone):
-    pass
+
+    # Private Functions
+    def _getlevel(self):
+        # Return percentage
+        state = self._getstatus()['Body']['ZoneStatus']['Level']
+        return state
+
+    def _setlevel(self, level):
+        # Accept percentages
+        if level > 100 or level < 0:
+            raise Exception("Level must be a percentage between 0 and 100")
+
+        packet = {
+            "CommuniqueType": "CreateRequest",
+            "Header": {
+                "Url": self._href + "/commandprocessor",
+            },
+            "Body": {
+                "Command": {
+                    "CommandType": "GoToDimmedLevel",
+                    "DimmedLevelParameters": {
+                        "Level": level,
+                        "FadeTime":"00:00:01",
+                        "DelayTime":"00:00:01"
+                    }
+                }
+            }
+        }
+        
+        return self._leap.send(packet)
+
+    # Properties
+    @property
+    def level(self):
+        return self._getlevel()
+
+    @level.setter
+    def level(self, level):
+        self._setlevel(level)
+
 
 class spectrumTuningZone(zone):
+    # TODO: Support spectrum tuning
     pass
