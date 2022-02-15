@@ -85,9 +85,9 @@ class area():
         self._href = href
         self._parent = parent
         self._leap = self._parent.leap
-        summary = self._getsummary()['Body']['Area']
-        self._href = summary['href'] # Prefer absolute href as returned by getsummary over any realative one we were given (for eg. /area/3 over /area/rootarea)
-        self._name = summary['Name'] # Human readable name
+        self._summary = self._getsummary()['Body']['Area']
+        self._href = self._summary['href'] # Prefer absolute href as returned by getsummary over any realative one we were given (for eg. /area/3 over /area/rootarea)
+        self._name = self._summary['Name'] # Human readable name
         self._children = self._getchildren() # Save children as private variable so we don't end up with repeat objects
 
     # Private functions
@@ -102,27 +102,25 @@ class area():
         return self._leap.send(packet)
 
     def _getchildren(self):
-        children = []
         packet = {
             "CommuniqueType": "ReadRequest",
             "Header": {
-                "Url": str(self._href) + "/childarea/summary"
+                "Url": str(self._href) + "/childarea/summary" # can't use getsummary as it doesn't return child areas
             }
         }
-        childareas = self._leap.send(packet)
 
-        try:
-            childlist = childareas['Body']['AreaSummaries']
-            for child in childlist:
-                if child['IsLeaf'] == 'true':
-                    childobj = leafArea(self, child['href'])
-                    children.append(childobj)
+        response = self._leap.send(packet)
+
+        children = []
+
+        if 'AreaSummaries' in response['Body']:
+            for child in response['Body']['AreaSummaries']:
+                if child['IsLeaf']:
+                    children.append(leafArea(self, child['href']))
                 else:
-                    childobj = area(self, child['href'])
-                    children.append(childobj)
-        except KeyError:
-            # This is not supposed to happen...
-            warnings.warn("Branch area has no children...")
+                    children.append(area(self, child['href']))
+        else:
+            warnings.warn("No children found for " + self.name)
 
         return children
 
@@ -152,14 +150,9 @@ class leafArea(area):
      def _getchildren(self):
         children = []
         # We are a leaf, so see if we have any zones
-        try:
-            associatedzones = self._getsummary()['Body']['Area']['AssociatedZones']
-            for associatedzone in associatedzones:
-                zoneobj = zone.create(self, associatedzone['href'])
-                children.append(zoneobj)
-        except KeyError:
-            # We don't seem to have any children...
-            pass
+        if 'AssociatedZones' in self._summary:
+            for zone_ in self._summary['AssociatedZones']:
+                children.append(zone.create(self, zone_['href']))
 
         return children
 
