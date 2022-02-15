@@ -8,6 +8,7 @@ https://github.com/LLFP/llfp
 '''
 
 import json
+import time
 import socket, ssl
 import colorsys
 import warnings
@@ -78,6 +79,13 @@ class bridge:
     @property
     def root(self):
         return area(self, "/area/rootarea")
+
+# Helper function to format seconds as HH:MM:SS
+def format_seconds(sec):
+    return time.strftime('%H:%M:%S', time.gmtime(sec))
+
+def parse_seconds(time_str):
+    return time.strptime(time_str, "%H:%M:%S")
 
 class area():
 
@@ -161,17 +169,13 @@ class zone():
     @classmethod
     def create(cls, parent, href):
         ztype = cls.getsummary(parent.leap, href)['Body']['Zone']['ControlType']
-        if ztype == 'Switched':
-            z = switchedZone(parent, href)
-        elif ztype == 'Dimmed':
-            z = dimmedZone(parent, href)
-        elif ztype == 'SpectrumTune':
-            z = spectrumTuningZone(parent, href)
-        else:
-            warnings.warn("Unsupported Zone Type: " + ztype)
-            z = zone(parent, href) # Just create a generic zone
-        
-        return z
+        match ztype:
+            case 'Switched': return switchedZone(parent, href)
+            case 'Dimmed': return dimmedZone(parent, href)
+            case 'SpectrumTune': return spectrumTuningZone(parent, href)
+            case _:
+                warnings.warn("Unknown zone type: " + ztype)
+                return zone(parent, href)
         
     def __init__(self, parent, href):
         self._href = href
@@ -181,6 +185,7 @@ class zone():
         self._href = summary['href'] # Prefer absolute href as returned by getsummary over any realative one we were given (for eg. /area/3 over /area/rootarea)
         self._name = summary['Name'] # Human readable name
         self._type = summary['ControlType'] # Type of zone
+        self.delay = 0 # Default to no delay
 
     @staticmethod
     def getsummary(leap, href):
@@ -224,26 +229,25 @@ class zone():
     def type(self):
         return self._type
 
+    @property
+    def delay(self):
+        return parse_seconds(self._delay)
+
+    @delay.setter
+    def delay(self, value):
+        self._delay = format_seconds(value)
+
 # Zone Subclasses
 
 class switchedZone(zone):
-
+    
     # Private Functions
     def _getstate(self):
         # Return True or False
         state = self._getstatus()['Body']['ZoneStatus']['SwitchedLevel']
-        if state == "On":
-            return True
-        else:
-            return False
+        return state == 'On'
 
     def _setstate(self, state):
-        # Accept True or False
-        if state == True:
-            s = "On"
-        else:
-            s = "Off"
-
         packet = {
             "CommuniqueType": "CreateRequest",
             "Header": {
@@ -253,8 +257,8 @@ class switchedZone(zone):
                 "Command": {
                     "CommandType": "GoToSwitchedLevel",
                     "SwitchedLevelParameters": {
-                        "SwitchedLevel": s,
-                        "DelayTime":"00:00:01"
+                        "SwitchedLevel": "On" if state else "Off",
+                        "DelayTime": self._delay
                     }
                 }
             }
@@ -273,6 +277,10 @@ class switchedZone(zone):
 
 
 class dimmedZone(zone):
+
+    def __init__(self, parent, href):
+        self._fade = 1
+        super().__init__(parent, href)
 
     # Private Functions
     def _getlevel(self):
@@ -295,8 +303,8 @@ class dimmedZone(zone):
                     "CommandType": "GoToDimmedLevel",
                     "DimmedLevelParameters": {
                         "Level": level,
-                        "FadeTime":"00:00:01",
-                        "DelayTime":"00:00:01"
+                        "FadeTime": self._fade,
+                        "DelayTime": self._delay
                     }
                 }
             }
@@ -305,6 +313,14 @@ class dimmedZone(zone):
         return self._leap.send(packet)
 
     # Properties
+    @property
+    def fade(self):
+        return parse_seconds(self._fade)
+
+    @fade.setter
+    def fade(self, value):
+        self._fade = format_seconds(value)
+
     @property
     def level(self):
         return self._getlevel()
