@@ -3,9 +3,12 @@ import llfp
 b = llfp.Bridge("192.168.4.37")
 b.login("jjtech", "jjtech0130")
 
+print("Indexing...")
+root = b.root()  # This function will re-index the entire tree, don't call it multiple times
+
 
 def find_zone(room, name):
-    for area in b.root.children:
+    for area in root.children:
         for subarea in area.children:
             for zone in subarea.children:
                 if zone.name == name and zone.parent.name == room:
@@ -15,7 +18,7 @@ def find_zone(room, name):
 # Liam: /zone/8380
 # Jay: /zone/7690
 # Micah: /zone/7708
-print("Finding zones by name... this is *really* inefficient...")
+print("Done! Finding zones...")
 light1 = find_zone("Micah's Room", "Lights")  # Yes this is really named with an apostrophe
 light2 = find_zone("Liams Room", "Lights")
 light3 = find_zone("Jays Room", "Lights")

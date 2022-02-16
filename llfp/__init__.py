@@ -3,8 +3,7 @@
 
 """
 llfp by JJTech0130 - a Lutron LEAP library for Python
-https://github.com/LLFP/llfp
-
+https://github.com/JJTech0130/llfp
 """
 
 import json
@@ -26,14 +25,13 @@ class Leap:
         self._sock.connect((host, port))
 
     def send(self, packet):
-        print(packet)
         packet = json.dumps(packet)  # Turn it into JSON
         packet += '\r\n'  # Add a newline
         packet = packet.encode('utf-8')  # Encode it in UTF-8
         self._sock.send(packet)  # Send the packet
         return json.loads(self._sock.recv().decode('utf-8'))  # Decode the result
 
-    # TODO: Run periodically to keep the connection allive
+    # TODO: Run periodically to keep the connection alive
     def ping(self):
         packet = {
             "CommuniqueType": "ReadRequest",
@@ -79,7 +77,6 @@ class Bridge:
     def leap(self):
         return self._leap
 
-    @property
     def root(self):
         return Area(self, "/area/rootarea")
 
@@ -141,7 +138,8 @@ class Area:
     # Properties
     @property
     def children(self):
-        return self._getchildren().copy()  # Lists are not automatically passed as copies
+        #return self._getchildren().copy()  # Lists are not automatically passed as copies
+        return self._children.copy()
 
     @property
     def name(self):
@@ -196,7 +194,6 @@ class Zone:
         self._name = summary['Name']  # Human-readable name
         self._type = summary['ControlType']  # Type of zone
         self.delay = 0  # Default to no delay
-        # FIXME: Children like above
 
     @staticmethod
     def _getsummary(leap, href):
