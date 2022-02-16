@@ -12,7 +12,7 @@ def find_zone(room, name):
 # Jay: /zone/7690
 # Micah: /zone/7708
 print("Finding zones by name... this is *really* inefficient...")
-light1 = find_zone("Micah's Room", "Lights")
+light1 = find_zone("Micah's Room", "Lights") # Yes this is really named with an apostrophe
 light2 = find_zone("Liams Room", "Lights")
 light3 = find_zone("Jays Room", "Lights")
 print("Found all the zones!")
