@@ -1,35 +1,37 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
-'''
+"""
 llfp by JJTech0130 - a Lutron LEAP library for Python
 https://github.com/LLFP/llfp
 
-'''
+"""
 
 import json
+import socket
+import ssl
 import time
-import socket, ssl
-import colorsys
 import warnings
 
 
-class leap:
-    '''
-    low-level LEAP commmands
-    '''
+class Leap:
+    """
+    low-level LEAP commands
+    """
+
     def __init__(self, host, port):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.settimeout(10)
         self._sock = ssl.wrap_socket(sock)
-        self._sock.connect((host,port))
+        self._sock.connect((host, port))
 
     def send(self, packet):
-        packet = json.dumps(packet) # Turn it into JSON
-        packet += '\r\n' # Add a newline
-        packet = packet.encode('utf-8') # Encode it in UTF-8
-        self._sock.send(packet) # Send the packet
-        return json.loads(self._sock.recv().decode('utf-8')) # Decode the result
+        print(packet)
+        packet = json.dumps(packet)  # Turn it into JSON
+        packet += '\r\n'  # Add a newline
+        packet = packet.encode('utf-8')  # Encode it in UTF-8
+        self._sock.send(packet)  # Send the packet
+        return json.loads(self._sock.recv().decode('utf-8'))  # Decode the result
 
     # TODO: Run periodically to keep the connection allive
     def ping(self):
@@ -47,13 +49,14 @@ class leap:
     def sock(self):
         return self._sock
 
-class bridge:
-    '''
-    Control the bridge/processor
-    '''
-    def __init__(self, host, port=8081):
-        self._leap = leap(host,port)
 
+class Bridge:
+    """
+    Control the bridge/processor
+    """
+
+    def __init__(self, host, port=8081):
+        self._leap = Leap(host, port)
 
     def login(self, id, password):
         packet = {
@@ -78,25 +81,28 @@ class bridge:
 
     @property
     def root(self):
-        return area(self, "/area/rootarea")
+        return Area(self, "/area/rootarea")
+
 
 # Helper function to format seconds as HH:MM:SS
 def format_seconds(sec):
     return time.strftime('%H:%M:%S', time.gmtime(sec))
 
+
 def parse_seconds(time_str):
     return time.strptime(time_str, "%H:%M:%S")
 
-class area():
+
+class Area:
 
     def __init__(self, parent, href):
         self._href = href
         self._parent = parent
         self._leap = self._parent.leap
         self._summary = self._getsummary()['Body']['Area']
-        self._href = self._summary['href'] # Prefer absolute href as returned by getsummary over any realative one we were given (for eg. /area/3 over /area/rootarea)
-        self._name = self._summary['Name'] # Human readable name
-        self._children = self._getchildren() # Save children as private variable so we don't end up with repeat objects
+        self._href = self._summary['href']  # Prefer absolute href in the summary over any relative one
+        self._name = self._summary['Name']  # Human-readable name
+        self._children = self._getchildren()  # FIXME: Use this rather than calling getchildren every time
 
     # Private functions
     def _getsummary(self):
@@ -113,7 +119,7 @@ class area():
         packet = {
             "CommuniqueType": "ReadRequest",
             "Header": {
-                "Url": str(self._href) + "/childarea/summary" # can't use getsummary as it doesn't return child areas
+                "Url": str(self._href) + "/childarea/summary"  # can't use summary as it doesn't return child areas
             }
         }
 
@@ -124,9 +130,9 @@ class area():
         if 'AreaSummaries' in response['Body']:
             for child in response['Body']['AreaSummaries']:
                 if child['IsLeaf']:
-                    children.append(leafArea(self, child['href']))
+                    children.append(LeafArea(self, child['href']))
                 else:
-                    children.append(area(self, child['href']))
+                    children.append(Area(self, child['href']))
         else:
             warnings.warn("No children found for " + self.name)
 
@@ -135,7 +141,7 @@ class area():
     # Properties
     @property
     def children(self):
-        return self._getchildren().copy() # Lists are not automatically passed as copies
+        return self._getchildren().copy()  # Lists are not automatically passed as copies
 
     @property
     def name(self):
@@ -153,42 +159,47 @@ class area():
     def leap(self):
         return self._leap
 
-class leafArea(area):
 
-     def _getchildren(self):
+class LeafArea(Area):
+
+    def _getchildren(self):
         children = []
         # We are a leaf, so see if we have any zones
         if 'AssociatedZones' in self._summary:
             for zone_ in self._summary['AssociatedZones']:
-                children.append(zone.create(self, zone_['href']))
+                children.append(Zone.create(self, zone_['href']))
 
         return children
 
-class zone():
+
+class Zone:
 
     @classmethod
     def create(cls, parent, href):
-        ztype = cls.getsummary(parent.leap, href)['Body']['Zone']['ControlType']
-        match ztype:
-            case 'Switched': return switchedZone(parent, href)
-            case 'Dimmed': return dimmedZone(parent, href)
-            case 'SpectrumTune': return spectrumTuningZone(parent, href)
+        match cls._getsummary(parent.leap, href)['Body']['Zone']['ControlType']:
+            case 'Switched':
+                return SwitchedZone(parent, href)
+            case 'Dimmed':
+                return DimmedZone(parent, href)
+            case 'SpectrumTune':
+                return SpectrumTuningZone(parent, href)
             case _:
-                warnings.warn("Unknown zone type: " + ztype)
-                return zone(parent, href)
-        
+                warnings.warn("Invalid zone type")
+                return Zone(parent, href)
+
     def __init__(self, parent, href):
         self._href = href
         self._parent = parent
         self._leap = self._parent.leap
-        summary = self.getsummary(self._leap, self._href)['Body']['Zone']
-        self._href = summary['href'] # Prefer absolute href as returned by getsummary over any realative one we were given (for eg. /area/3 over /area/rootarea)
-        self._name = summary['Name'] # Human readable name
-        self._type = summary['ControlType'] # Type of zone
-        self.delay = 0 # Default to no delay
+        summary = self._getsummary(self._leap, self._href)['Body']['Zone']
+        self._href = summary['href']  # Prefer absolute href in the summary over any relative one
+        self._name = summary['Name']  # Human-readable name
+        self._type = summary['ControlType']  # Type of zone
+        self.delay = 0  # Default to no delay
+        # FIXME: Children like above
 
     @staticmethod
-    def getsummary(leap, href):
+    def _getsummary(leap, href):
         packet = {
             "CommuniqueType": "ReadRequest",
             "Header": {
@@ -237,10 +248,11 @@ class zone():
     def delay(self, value):
         self._delay = format_seconds(value)
 
+
 # Zone Subclasses
 
-class switchedZone(zone):
-    
+class SwitchedZone(Zone):
+
     # Private Functions
     def _getstate(self):
         # Return True or False
@@ -263,7 +275,7 @@ class switchedZone(zone):
                 }
             }
         }
-        
+
         return self._leap.send(packet)
 
     # Properties
@@ -276,7 +288,7 @@ class switchedZone(zone):
         self._setstate(state)
 
 
-class dimmedZone(zone):
+class DimmedZone(Zone):
 
     def __init__(self, parent, href):
         self._fade = 1
@@ -309,7 +321,7 @@ class dimmedZone(zone):
                 }
             }
         }
-        
+
         return self._leap.send(packet)
 
     # Properties
@@ -330,6 +342,6 @@ class dimmedZone(zone):
         self._setlevel(level)
 
 
-class spectrumTuningZone(zone):
+class SpectrumTuningZone(Zone):
     # TODO: Support spectrum tuning
     pass

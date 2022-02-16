@@ -15,7 +15,7 @@ class App(QWidget):
         self.top = 10
         self.width = 320
         self.height = 200
-        self.bridge1 = llfp.bridge("192.168.0.5")
+        self.bridge1 = llfp.Bridge("192.168.0.5")
         print(self.bridge1.login("jjtech", "jjtech0130")) #Replace with your username/password.
         self.initUI()
 
@@ -34,14 +34,14 @@ class App(QWidget):
 
     @pyqtSlot()
     def zone1_clicked(self):
-        lamp = llfp.zone(6164, self.bridge1)
+        lamp = llfp.Zone(6164, self.bridge1)
         color = QColorDialog.getColor()
         if color.isValid():
             newvalue = (color.value()*100)/255
             newsat = (color.saturation()*100)/255
             print(lamp.goToColorFull(100,newvalue,color.hue(),newsat))
     def zone2_clicked(self):
-        lamp = llfp.zone(1719, self.bridge1)
+        lamp = llfp.Zone(1719, self.bridge1)
         color = QColorDialog.getColor()
         if color.isValid():
             newvalue = (color.value()*100)/255
