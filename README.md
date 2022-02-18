@@ -6,12 +6,3 @@ This is a python library for using Lutron's LEAP control protocol.
 
 NB: The Wiki is currently outdated, as are the examples. Please use test.py for basic usage.
 
-## TODO
-
-- [x] Get basic things (login, set level, ping, etc.)
-- [x] Use seperate classes
-- [x] Make sure that things work correctly when they finally get implemented
-- [x] Add more features (color, etc.)
-- [ ] Add support for reading zone IDs
-- [ ] Document all the features
-- [ ] Add Github Actions CI
