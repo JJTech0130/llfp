@@ -11,7 +11,15 @@ import socket
 import ssl
 import time
 import warnings
+import logging
+from rich.logging import RichHandler
 
+FORMAT = "%(message)s"
+logging.basicConfig(
+    level="NOTSET", format=FORMAT, datefmt="[%X]", handlers=[RichHandler()]
+)
+log = logging.getLogger("llfp")
+log.setLevel(logging.INFO)
 
 class Leap:
     """
@@ -19,17 +27,21 @@ class Leap:
     """
 
     def __init__(self, host, port):
+        log.debug("Connecting to socket")
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.settimeout(10)
         self._sock = ssl.wrap_socket(sock)
         self._sock.connect((host, port))
 
     def send(self, packet):
+        req = packet
         packet = json.dumps(packet)  # Turn it into JSON
         packet += '\r\n'  # Add a newline
         packet = packet.encode('utf-8')  # Encode it in UTF-8
         self._sock.send(packet)  # Send the packet
-        return json.loads(self._sock.recv().decode('utf-8'))  # Decode the result
+        resp = json.loads(self._sock.recv().decode('utf-8'))  # Decode the result
+        log.debug("LEAP request\n--> %r\n<-- %r", req, resp)
+        return resp
 
     # TODO: Run periodically to keep the connection alive
     def ping(self):
@@ -57,6 +69,7 @@ class Bridge:
         self._leap = Leap(host, port)
 
     def login(self, id, password):
+        log.info("Logging in with username [bold]%s[/bold] and password [bold]%s[/bold]", id, password, extra={"markup": True})
         packet = {
             "CommuniqueType": "UpdateRequest",
             "Header": {
@@ -93,13 +106,14 @@ def parse_seconds(time_str):
 class Area:
 
     def __init__(self, parent, href):
+        self._children = None
         self._href = href
         self._parent = parent
         self._leap = self._parent.leap
-        self._summary = self._getsummary()['Body']['Area']
+        self._summary = self._getsummary()['Body']['Area'] # FIXME: Could we get away with not getting the name? Getting it from parent children?
         self._href = self._summary['href']  # Prefer absolute href in the summary over any relative one
         self._name = self._summary['Name']  # Human-readable name
-        self._children = self._getchildren()  # FIXME: Use this rather than calling getchildren every time
+        #self._children = self._getchildren()  # FIXME: Use this rather than calling getchildren every time
 
     # Private functions
     def _getsummary(self):
@@ -138,7 +152,9 @@ class Area:
     # Properties
     @property
     def children(self):
-        #return self._getchildren().copy()  # Lists are not automatically passed as copies
+        if not self._children:
+            self._children = self._getchildren().copy()
+        # return self._getchildren().copy()  # Lists are not automatically passed as copies
         return self._children.copy()
 
     @property
@@ -181,6 +197,8 @@ class Zone:
                 return DimmedZone(parent, href)
             case 'SpectrumTune':
                 return SpectrumTuningZone(parent, href)
+            case 'CCO':
+                return Zone(parent, href)
             case _:
                 warnings.warn("Invalid zone type")
                 return Zone(parent, href)
@@ -288,7 +306,7 @@ class SwitchedZone(Zone):
 class DimmedZone(Zone):
 
     def __init__(self, parent, href):
-        self._fade = 1
+        self.fade = 1
         super().__init__(parent, href)
 
     # Private Functions
@@ -318,7 +336,6 @@ class DimmedZone(Zone):
                 }
             }
         }
-
         return self._leap.send(packet)
 
     # Properties
@@ -339,6 +356,39 @@ class DimmedZone(Zone):
         self._setlevel(level)
 
 
-class SpectrumTuningZone(Zone):
-    # TODO: Support spectrum tuning
-    pass
+class SpectrumTuningZone(DimmedZone):
+
+    def _sendcommand(self, name, parameters):
+        packet = {
+            "CommuniqueType": "CreateRequest",
+            "Header": {
+                "Url": self._href + "/commandprocessor",
+            },
+            "Body": {
+                "Command": {
+                    "CommandType": "GoTo" + name,
+                    name + "Parameters": parameters
+                }
+            }
+        }
+
+        return self._leap.send(packet)
+
+    def _setlevel(self, level):
+        return self._sendcommand("SpectrumTuningLevel", {
+            "Level": level,
+            "FadeTime": self._fade,
+            "DelayTime": self._delay
+        })
+
+    def _settuning(self, tuning):
+        return self._sendcommand("SpectrumTuningLevel", {
+            "ColorTuningStatus": tuning,
+            "FadeTime": self._fade,
+            "DelayTime": self._delay
+        })
+
+    def _gettuning(self):
+        return self._getstatus()['Body']['ZoneStatus']['ColorTuningStatus']
+
+
